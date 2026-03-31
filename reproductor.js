@@ -56,7 +56,6 @@ export class Reproductor {
       });
       this.chunks = [];
       // this.descargar();
-      this.isRecording = false;
     };
     if (this.startBeginning) {
       // this.video.currentTime = 0;
@@ -69,6 +68,8 @@ export class Reproductor {
 
   detenerGrabacion() {
     if (this.recorder && this.isRecording) {
+      this.isRecording = false;
+
       this.recorder.stop();
     }
   }

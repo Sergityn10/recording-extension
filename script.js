@@ -10,13 +10,8 @@ document.getElementById("toggle").addEventListener("click", async () => {
   };
   const recording = false;
   try {
-    if (!recording) {
-      recording = true;
-      await chrome.tabs.sendMessage(tab.id, message);
-    } else {
-      recording = false;
-      await chrome.tabs.sendMessage(tab.id, { action: "stop" });
-    }
+    await chrome.tabs.sendMessage(tab.id, message);
+
     return;
   } catch (_) {
     console.log("error");
