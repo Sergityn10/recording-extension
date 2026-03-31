@@ -1,0 +1,26 @@
+{
+  "manifest_version": 3,
+  "name": "CodingRecording",
+  "description": "Te permite grabar elementos de paginas de coding o editores onlines.",
+  "version": "1.0",
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "main.html"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["scripts/element_capture_content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "permissions": ["activeTab", "scripting", "downloads"],
+  "web_accessible_resources": [
+    {
+      "resources": ["reproductor.js"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}
