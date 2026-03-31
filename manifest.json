@@ -11,8 +11,8 @@
   },
   "content_scripts": [
     {
-      "matches": ["<all_urls>"],
-      "js": ["scripts/element_capture_content.js"],
+      "matches": ["https://codi.link/*"],
+      "js": ["scripts/codilink.js"],
       "run_at": "document_idle"
     }
   ],

@@ -1,5 +1,6 @@
 export class Reproductor {
   constructor(
+    listElements,
     videoElement,
     {
       options = { mimeType: "video/webm; codecs=vp9" },
@@ -7,7 +8,8 @@ export class Reproductor {
     },
   ) {
     console.log(videoElement);
-    this.video = videoElement;
+    this.listElements = listElements;
+    // this.video = videoElement;
     this.options = options;
     this.recorder = null;
     this.chunks = [];
@@ -15,10 +17,27 @@ export class Reproductor {
     this.startBeginning = startBeginning; //Booleano que nos comenta si al empezar a grabar, el video debe de empezar desde el inicio
   }
 
-  iniciarGrabacion() {
+  async iniciarGrabacion() {
     if (this.isRecording) return;
 
-    const stream = this.video.captureStream(60);
+    const stream = await navigator.mediaDevices.getDisplayMedia({
+      preferCurrentTab: true,
+    });
+    const [track] = stream.getVideoTracks();
+    if ("RestrictionTarget" in self && "fromElement" in RestrictionTarget) {
+      // Deriving a restriction target is supported.
+      console.log("permitido");
+      // Associate captureTarget with a new RestrictionTarget
+      const captureTarget = this.listElements[0];
+      const captureTarget2 = this.listElements[1];
+      const restrictionTarget = await CropTarget.fromElement(
+        captureTarget,
+        captureTarget2,
+      );
+      await track.cropTo(restrictionTarget);
+    }
+    // this.video.srcObject = stream;
+    // this.videoElement.play();
     this.recorder = new MediaRecorder(stream, this.options);
     this.chunks = [];
 
@@ -40,11 +59,11 @@ export class Reproductor {
       this.isRecording = false;
     };
     if (this.startBeginning) {
-      this.video.currentTime = 0;
-      this.video.pause();
+      // this.video.currentTime = 0;
+      // this.video.pause();
     }
     this.recorder.start();
-    this.video.play();
+    // this.video.play();
     this.isRecording = true;
   }
 
