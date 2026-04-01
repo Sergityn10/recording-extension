@@ -4,21 +4,21 @@
   const markup = document.querySelector("#markup");
   const script = document.querySelector("#script");
   const style = document.querySelector("#style");
-  let reproductor = null;
-  chrome.runtime.onMessage.addListener((msg) => {
+  let listTargetElements = [markup, script, style];
+  let reproductores = [];
+  chrome.runtime.onMessage.addListener(async (msg) => {
     const videoElement = document.createElement("video");
     if (msg && msg.action === "record") {
-      if (!reproductor)
-        reproductor = new Reproductor(
-          [markup, script, style],
-          videoElement,
-          {},
-        );
-      if (reproductor.isRecording) reproductor.detenerGrabacion();
-      else reproductor.iniciarGrabacion();
+      if (reproductores.length === 0) {
+        for (let i = 0; i < listTargetElements.length; i++) {
+          reproductores[i] = await new Promise((resolve) => {
+            resolve(new Reproductor(listTargetElements[i], {}));
+          });
+          if (reproductores[i].isRecording) reproductores[i].detenerGrabacion();
+          else reproductores[i].iniciarGrabacion();
+        }
+      }
       return { ok: true };
-    } else if (msg.action === "stop") {
-      reproductor.detenerGrabacion();
     }
     return;
   });
