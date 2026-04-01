@@ -10,7 +10,7 @@
     const videoElement = document.createElement("video");
     if (msg && msg.action === "record") {
       if (reproductores.length === 0) {
-        for (let i = 0; i < listTargetElements.length; i++) {
+        for (let i = 0; i < 1; i++) {
           reproductores[i] = await new Promise((resolve) => {
             resolve(new Reproductor(listTargetElements[i], {}));
           });
