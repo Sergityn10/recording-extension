@@ -23,8 +23,21 @@
     panel = document.createElement("div");
     panel.id = "erc-panel";
     panel.style.position = "fixed";
-    panel.style.top = "12px";
-    panel.style.right = "12px";
+    const POS_KEY = "erc-panel-pos";
+    const saved = (() => {
+      try {
+        return JSON.parse(localStorage.getItem(POS_KEY) || "null");
+      } catch (_) {
+        return null;
+      }
+    })();
+    panel.style.top =
+      saved && typeof saved.top === "number" ? `${saved.top}px` : "12px";
+    panel.style.left =
+      saved && typeof saved.left === "number" ? `${saved.left}px` : "auto";
+    if (!saved || typeof saved.left !== "number") {
+      panel.style.right = "12px";
+    }
     panel.style.zIndex = "999999999";
     panel.style.background = "#111";
     panel.style.color = "#fff";
@@ -35,6 +48,56 @@
     panel.style.fontSize = "13px";
     panel.style.boxShadow = "0 8px 24px rgba(0,0,0,.3)";
     panel.style.display = "none";
+
+    const dragHandle = document.createElement("div");
+    dragHandle.textContent = "Arrastrar";
+    dragHandle.style.fontSize = "11px";
+    dragHandle.style.opacity = "0.7";
+    dragHandle.style.cursor = "move";
+    dragHandle.style.userSelect = "none";
+    dragHandle.style.marginBottom = "8px";
+    dragHandle.style.paddingBottom = "6px";
+    dragHandle.style.borderBottom = "1px solid rgba(255,255,255,.12)";
+
+    let dragging = false;
+    let offsetX = 0;
+    let offsetY = 0;
+    const onPointerMove = (ev) => {
+      if (!dragging) return;
+      const left = Math.max(
+        0,
+        Math.min(window.innerWidth - panel.offsetWidth, ev.clientX - offsetX),
+      );
+      const top = Math.max(
+        0,
+        Math.min(window.innerHeight - panel.offsetHeight, ev.clientY - offsetY),
+      );
+      panel.style.left = `${left}px`;
+      panel.style.top = `${top}px`;
+      panel.style.right = "auto";
+    };
+    const onPointerUp = () => {
+      if (!dragging) return;
+      dragging = false;
+      try {
+        const left = parseFloat(panel.style.left);
+        const top = parseFloat(panel.style.top);
+        if (Number.isFinite(left) && Number.isFinite(top)) {
+          localStorage.setItem(POS_KEY, JSON.stringify({ left, top }));
+        }
+      } catch (_) {}
+      window.removeEventListener("pointermove", onPointerMove, true);
+      window.removeEventListener("pointerup", onPointerUp, true);
+    };
+    dragHandle.addEventListener("pointerdown", (ev) => {
+      ev.preventDefault();
+      const r = panel.getBoundingClientRect();
+      dragging = true;
+      offsetX = ev.clientX - r.left;
+      offsetY = ev.clientY - r.top;
+      window.addEventListener("pointermove", onPointerMove, true);
+      window.addEventListener("pointerup", onPointerUp, true);
+    });
 
     const row = document.createElement("div");
     row.style.display = "flex";
@@ -78,6 +141,7 @@
     hint.style.opacity = "0.8";
     hint.style.marginTop = "6px";
 
+    panel.appendChild(dragHandle);
     panel.appendChild(row);
     panel.appendChild(hint);
     document.documentElement.appendChild(panel);
@@ -173,7 +237,11 @@
     }
     try {
       stream = await navigator.mediaDevices.getDisplayMedia({
-        video: true,
+        video: {
+          width: { ideal: 1920, max: 1920 },
+          height: { ideal: 1080, max: 1080 },
+          frameRate: { ideal: 30, max: 30 },
+        },
         audio: false,
       });
     } catch (e) {
@@ -182,6 +250,15 @@
     const vt = stream.getVideoTracks()[0];
     if (!vt) return;
     mainTrack = vt;
+
+    try {
+      await mainTrack.applyConstraints({
+        width: { ideal: 1920, max: 1920 },
+        height: { ideal: 1080, max: 1080 },
+        frameRate: { ideal: 30, max: 30 },
+      });
+    } catch (_) {}
+
     targets.length = 0;
     selected.forEach((el) => targets.push(el));
     records.length = 0;
@@ -211,7 +288,7 @@
       if (!MediaRecorder.isTypeSupported(mime)) mime = "video/webm";
       const rec = new MediaRecorder(out, {
         mimeType: mime,
-        videoBitsPerSecond: 4_000_000,
+        videoBitsPerSecond: 10_000_000,
       });
       const chunks = [];
       rec.ondataavailable = (ev) => {
